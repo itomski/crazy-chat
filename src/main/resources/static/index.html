@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crazy Chat</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.2.3/css/bootstrap.min.css">
+</head>
+<body>
+
+    <div class="container my-5">
+        <div class="row mb-5">
+            <div class="col-sm-6">
+                <h1>Chat <button type="button" id="btnConnect" class="btn btn-success">Verbinden</button></h1>
+
+                <div class="mb-3">
+                    <input type="text" id="name" class="form-control" placeholder="Name">
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <div id="msg-box" class="my-5"></div>
+
+                <hr>
+
+                <div class="mb-3">
+                    <input type="text" id="msg" class="form-control" placeholder="Nachricht">
+                </div>
+                <button type="button" id="btnSubmit" class="btn btn-success">Senden</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script src="/webjars/bootstrap/5.2.3/js/bootstrap-bundle.min.js"></script>
+    <script>
+        let ws;
+        let connected = false;
+
+        let toggleBtnStatus = () => {
+            let btn = document.querySelector('#btnConnect');
+            if(connected) {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-danger');
+                btn.innerHTML = 'Trennen';
+            }
+            else {
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-success');
+                btn.innerHTML = 'Verbinden';
+            }
+        }
+
+        const connect = () => {
+            if(!connected) {
+                ws = new WebSocket('ws://localhost:8080/crazy-chat'); // WebSocket öffnen
+                connected = true;
+                toggleBtnStatus();
+                let nameField = document.getElementById('name');
+                ws.onopen = (resp) => {
+                    ws.send('connect:' + nameField.value);
+                }
+                ws.onmessage = (resp) => {
+                    showMessage(resp.data);
+                }
+            }
+            else {
+                if(ws != null)
+                    ws.close(); // WebSocket schließen
+
+                connected = false;
+                toggleBtnStatus();
+            }
+        };
+
+        const showMessage = (resp) => {
+            let msgBox = document.getElementById('msg-box');
+            let json = JSON.parse(resp); // Text-Response wird in ein JSON-Objekt geparst
+            let p = document.createElement('p');
+            p.innerHTML = json.name + ': ' + json.message;
+            msgBox.appendChild(p);
+        };
+
+        const sendMessage = () => {
+            let msgField = document.getElementById('msg');
+            let nameField = document.getElementById('name');
+
+            if(msgField.value != '') {
+            // Nachricht versenden
+                ws.send(JSON.stringify({name : nameField.value, message: msgField.value}));
+                msgField.value = ''; // Feld nach dem Absenden leeren
+            }
+        };
+
+        document.querySelector('#btnConnect').addEventListener('click', () => {
+            connect();
+        });
+
+        document.querySelector('#btnSubmit').addEventListener('click', () => {
+            sendMessage();
+        });
+
+    </script>
+</body>
+</html>
