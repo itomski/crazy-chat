@@ -64,6 +64,7 @@
                     ws.send('connect:' + nameField.value);
                 }
                 ws.onmessage = (resp) => {
+                    console.log(resp);
                     showMessage(resp.data);
                 }
             }
